@@ -1,0 +1,26 @@
+{
+  "name": "nesify",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.html",
+  "scripts": {
+    "dev": "webpack --mode development --watch",
+    "build": "webpack --mode production"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "babel-core": "^6.26.3",
+    "canvas-webworker": "^0.0.2",
+    "color-diff": "^1.1.0",
+    "lodash": "^4.17.10",
+    "nearest-color": "^0.4.2",
+    "serve": "^10.0.0"
+  },
+  "devDependencies": {
+    "webpack": "^4.17.1",
+    "webpack-cli": "^3.1.0",
+    "webpack-dev-server": "^3.1.7",
+    "worker-loader": "^2.0.0"
+  }
+}
