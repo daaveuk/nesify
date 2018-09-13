@@ -85,6 +85,5 @@ onmessage = (e) => {
   imageData = _.flatten(imageData);
   const typedArray = Uint8ClampedArray.from(imageData);
   let image = new ImageData(typedArray, source.width, source.height);
-
   self.postMessage([ 'imageData', image, thread ]);
 };

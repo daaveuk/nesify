@@ -1,6 +1,6 @@
 var diff = require('color-diff');
 import Worker from './nes.worker.js';
-const threads = 50;
+const threads = 32;
 const nesWorker = new Worker();
 var _ = require('lodash');
 
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
   let button = document.getElementById('button');
   let saveButton = document.getElementById('saveButton');
   const ctx = output.getContext('2d');
-
+  const multiplier = 2;
   const imageCanvas = document.createElement('canvas');
   const imageCTX = imageCanvas.getContext('2d');
 
@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
   button.addEventListener('click', (e) => {
     let imageData = imageCTX.getImageData(0, 0, source.width, source.height);
+
     sendImageToThreads(imageData);
   });
 
@@ -36,27 +37,34 @@ document.addEventListener('DOMContentLoaded', (event) => {
   const sendImageToThreads = (imageData) => {
     for (let th = 0; th < threads; th++) {
       let nesWorker = new Worker();
-      let debugCanvas = document.createElement('canvas');
-      let debugCTX = debugCanvas.getContext('2d');
-      debugCanvas.width = Math.round(imageData.width / threads);
-      debugCanvas.height = imageData.height;
+      let splitCanvas = document.createElement('canvas');
+      let splitCTX = splitCanvas.getContext('2d');
+      let threadCanvas = document.createElement('canvas');
+      let threadCTX = threadCanvas.getContext('2d');
       let quadrantW = imageData.width / threads;
       let quadrantXStart = Math.round(quadrantW * th + 1);
       let quadrantXEnd = Math.round(imageData.width / threads);
       if (quadrantW * th === 0) {
         quadrantXStart = Math.round(quadrantW * th);
       }
-
-      console.log(quadrantXStart, 0, quadrantXEnd, imageData.height);
+      let mWidth = Math.round(quadrantW / multiplier);
+      let mHeight = Math.round(imageData.height / multiplier);
+      splitCanvas.width = quadrantW;
+      splitCanvas.height = imageData.height;
+      threadCanvas.width = mWidth;
+      threadCanvas.height = mHeight;
       let quadImageData = imageCTX.getImageData(quadrantXStart, 0, quadrantXEnd, imageData.height);
 
-      console.log(quadImageData);
-      debugCTX.putImageData(quadImageData, 0, 0);
+      splitCTX.putImageData(quadImageData, 0, 0);
 
       const debugContainer = document.getElementById('debug');
+      //debugCanvas.width = mWidth;
+      //debugCanvas.height = mHeight;
 
-      debugContainer.appendChild(debugCanvas);
-      nesWorker.postMessage([ quadImageData, th ]);
+      threadCTX.drawImage(splitCanvas, 0, 0, mWidth, mHeight);
+      let threadImageData = threadCTX.getImageData(0, 0, mWidth, mHeight);
+      debugContainer.appendChild(threadCanvas);
+      nesWorker.postMessage([ threadImageData, th ]);
 
       nesWorker.onmessage = (e) => {
         switch (e.data[0]) {
@@ -79,7 +87,19 @@ document.addEventListener('DOMContentLoaded', (event) => {
   };
 
   const drawNesImage = (imageData, thread) => {
-    console.log(imageData);
-    ctx.putImageData(imageData, imageData.width * thread, 0);
+    console.log(thread);
+    let nesCanvas = document.createElement('canvas');
+    let nesCTX = nesCanvas.getContext('2d');
+    nesCanvas.width = imageData.width;
+    nesCanvas.height = imageData.height;
+    nesCTX.putImageData(imageData, 0, 0);
+    let quadX = imageData.width * thread * multiplier;
+    let quadXEnd = quadX + imageData.width * multiplier;
+    console.log(quadX, 0, quadXEnd, imageData.height * multiplier);
+    nesCanvas.mozImageSmoothingEnabled = false;
+    nesCanvas.webkitImageSmoothingEnabled = false;
+    nesCanvas.msImageSmoothingEnabled = false;
+    nesCanvas.imageSmoothingEnabled = false;
+    ctx.drawImage(nesCanvas, quadX, 0, imageData.width * multiplier, imageData.height * multiplier);
   };
 });
